@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Pharmacy Revenue Leakage Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 1. CORE SETUP & RESETS */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #0A0D11;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #presentation-wrapper {
+            position: relative;
+            width: 1280px;
+            height: 720px;
+            transform-origin: center center;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        /* 2. SLIDE CONTAINER (STRICT DIMENSIONS) */
+        .slide-container {
+            align-items: flex-start;
+            background-color: #0A0D11;
+            background-image: linear-gradient(#232323 1px, transparent 1px), linear-gradient(90deg, #232323 1px, transparent 1px);
+            background-size: 40px 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            font-family: 'Urbanist', sans-serif;
+            height: 100%;
+            justify-content: center;
+            overflow: hidden;
+            padding: 60px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease;
+            transform: translateY(10px);
+        }
+
+        .slide-container.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 10;
+            transform: translateY(0);
+        }
+
+        /* Subtle Dark Theme Background Design (Bokeh effect) */
+        .slide-container::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 0;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .slide-container::after {
+            content: '';
+            position: absolute;
+            bottom: -200px;
+            left: -200px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(255, 41, 106, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 0;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .slide-container > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 3. CONSISTENT TYPOGRAPHY */
+        .slide-container h1,
+        .slide-container h2,
+        .slide-container h3,
+        .slide-container h4 {
+            color: #FBF6FF;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .slide-container h1 span,
+        .slide-container h2 span,
+        .slide-title span {
+            color: #FF296A;
+        }
+
+        .slide-container p,
+        .slide-container .subtitle,
+        .slide-container li,
+        .slide-container .chart-summary {
+            color: #DEDEDE;
+            font-family: 'Urbanist', sans-serif;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        /* Font Sizes */
+        .slide-container h1 { font-size: 75px; line-height: 1.1; margin-bottom: 20px; }
+        .slide-container .slide-title { font-size: 55px; line-height: 1.1; margin-bottom: 40px; width: 100%; text-align: left; }
+        .slide-container h3 { font-size: 32px; margin-bottom: 15px; color: #3B82F6; }
+        .slide-container p, .slide-container li { font-size: 22px; }
+        
+        .slide-container .subtitle {
+            font-size: 24px;
+            color: #939393;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* 4. LAYOUTS */
+        
+        /* Title Slide */
+        .title-layout {
+            text-align: center;
+            width: 100%;
+            align-self: center;
+        }
+
+        /* Section Title */
+        .section-title-layout {
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+        }
+        .section-title-layout hr {
+            background-color: #FF296A;
+            border: none;
+            height: 5px;
+            margin-bottom: 30px;
+            width: 120px;
+        }
+        .section-title-layout h2 { font-size: 70px; }
+        .section-title-layout p { font-size: 28px; color: #DEDEDE; margin-top: 20px; }
+
+        /* Tiled Layouts (Icons & Text) */
+        .tiled-content {
+            display: grid;
+            gap: 40px;
+            grid-template-columns: repeat(2, 1fr);
+            width: 100%;
+        }
+        
+        .tile {
+            background-color: #161616;
+            border: 1px solid #272A2E;
+            border-radius: 16px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .tile .icon {
+            align-items: center;
+            background-color: #3B82F6;
+            border-radius: 50%;
+            color: #FBF6FF;
+            display: flex;
+            font-size: 28px;
+            height: 65px;
+            justify-content: center;
+            margin-bottom: 25px;
+            width: 65px;
+        }
+
+        /* Highlighted Numbers */
+        .highlight-numbers-layout {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            width: 100%;
+        }
+        .highlight-numbers-layout .number-box {
+            flex: 0 0 45%;
+            text-align: right;
+        }
+        .highlight-numbers-layout .number {
+            color: #FF296A;
+            font-size: 160px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .highlight-numbers-layout .text-box {
+            flex: 1;
+        }
+
+        /* Bleed Image Right Layout - STRICT CSS */
+        .slide-container.bleed-image-layout {
+            align-items: start;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            padding: 0;
+            gap: 0;
+        }
+        .slide-container.bleed-image-layout > .content-container {
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 720px;
+        }
+        .slide-container.bleed-image-layout .bleed-text-side p {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #DEDEDE;
+        }
+        .slide-container.bleed-image-layout .image-container {
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        }
+        .slide-container.bleed-image-layout img.bleed-image-side {
+            display: block;
+            height: 720px;
+            object-fit: cover;
+            object-position: center;
+            width: 100%;
+            border-radius: 0;
+        }
+
+        /* Image Right Text Left Layout */
+        .image-right-layout .two-column {
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            height: 100%;
+            width: 100%;
+        }
+        .image-right-layout .content-container {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+        }
+        .image-right-layout .image-container {
+            width: 50%;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .image-right-layout .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+
+        /* Styled Bullet Points */
+        .bullet-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .bullet-list li {
+            padding-left: 30px;
+            position: relative;
+            margin-bottom: 25px;
+            font-size: 22px;
+        }
+        .bullet-list li::before {
+            color: #FF296A;
+            content: '•';
+            font-size: 60px;
+            left: 0;
+            position: absolute;
+            top: -35px;
+        }
+        .bullet-list li strong {
+            color: #FBF6FF;
+        }
+
+        /* Doughnut Chart */
+        .doughnut-chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 80px;
+            width: 100%;
+        }
+        .doughnut-chart {
+            border-radius: 50%;
+            height: 380px;
+            width: 380px;
+            box-shadow: 0 0 0 10px #0A0D11;
+        }
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            list-style: none;
+        }
+        .legend li {
+            display: flex;
+            align-items: center;
+            color: #FBF6FF;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        .legend .color-box {
+            border-radius: 6px;
+            height: 30px;
+            margin-right: 20px;
+            width: 30px;
+        }
+        .chart-summary {
+            text-align: center;
+            margin: 40px auto 0;
+            max-width: 900px;
+            font-size: 22px;
+            color: #939393;
+        }
+
+        /* Q&A Layout */
+        .qa-layout {
+            align-self: center;
+            text-align: center;
+            width: 100%;
+        }
+        .qa-layout h2 { font-size: 85px; margin-bottom: 25px; }
+        .qa-layout p { font-size: 26px; color: #DEDEDE; }
+        .qa-layout .contact-info { margin-top: 50px; font-size: 22px; color: #3B82F6; font-weight: 700; }
+
+        /* Navigation Controls */
+        .nav-controls {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .nav-btn {
+            background: #161616;
+            border: 1px solid #3B82F6;
+            color: #3B82F6;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-btn:hover {
+            background: #3B82F6;
+            color: #FBF6FF;
+            transform: scale(1.1);
+        }
+        
+        .slide-counter {
+            position: absolute;
+            bottom: 45px;
+            left: 40px;
+            color: #939393;
+            font-family: 'Urbanist', sans-serif;
+            font-size: 20px;
+            z-index: 100;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="presentation-wrapper">
+        <!-- Slide 1: Title -->
+        <div class="slide-container active image-right-layout" id="slide1">
+            <div class="two-column">
+                <div class="content-container">
+                    <h1 style="text-align: left;">The Pharmacy<br><span>Revenue Leakage</span> Map</h1>
+                    <p class="subtitle" style="margin: 20px 0 0 0; text-align: left;">Mapping the Friction: From Intake to Drop-off in Regional Holdings</p>
+                </div>
+                <div class="image-container">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1280&q=80" alt="Abstract digital healthcare data technology background blue and green">
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Phase 1 Title -->
+        <div class="slide-container" id="slide2">
+            <div class="section-title-layout">
+                <hr>
+                <h2>Phase 1: <span>The Intake</span></h2>
+                <p>The origin of the prescription data flow.</p>
+            </div>
+        </div>
+
+        <!-- Slide 3: Step A & B -->
+        <div class="slide-container" id="slide3">
+            <h2 class="slide-title">Initial <span>Processing</span></h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-file-prescription"></i></div>
+                        <h3>Step A: E-Prescription</h3>
+                        <p>The electronic prescription arrives securely from the medical provider, initiating the data cycle within the pharmacy system.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-user-check"></i></div>
+                        <h3>Step B: Patient Data</h3>
+                        <p>Technicians perform data entry and the initial profile match, preparing the script for complex insurance routing.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Phase 2 Title / Step C -->
+        <div class="slide-container bleed-image-layout" id="slide4">
+            <div class="content-container">
+                <h2 class="slide-title">The <span>Danger Zone</span></h2>
+                <div class="bleed-text-side">
+                    <h3>Phase 2: "Frankenstein" Adjudication</h3>
+                    <p><strong>Step C: Real-Time Eligibility (RTE) Check</strong></p>
+                    <p>The system attempts an automated connection to major Pharmacy Benefit Managers (PBMs) like Caremark or Express Scripts.</p>
+                    <p>This is where standard logic hits complex regulatory and payer walls, creating immense friction.</p>
+                </div>
+            </div>
+            <div class="image-container">
+                <img class="bleed-image-side" src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1280&q=80" alt="Data flowing visually">
+            </div>
+        </div>
+
+        <!-- Slide 5: The Bottleneck (Step D) -->
+        <div class="slide-container" id="slide5">
+            <h2 class="slide-title">⚠️ The <span>Bottleneck</span></h2>
+            <div class="content-area">
+                <div class="highlight-numbers-layout">
+                    <div class="number-box">
+                        <div class="number">11.81%</div>
+                    </div>
+                    <div class="text-box">
+                        <h3 style="color: #FBF6FF;">Claims hit a hard stop.</h3>
+                        <p>This is <strong>Step D</strong>. The revenue flow breaks completely. The legacy Pharmacy Management System (PMS) is structurally incapable of parsing complex denial codes automatically.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Why the Flow Breaks -->
+        <div class="slide-container" id="slide6">
+            <h2 class="slide-title">Why The Flow <span>Breaks</span></h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <h3>Step Therapy & PA Flags</h3>
+                        <p>Prior Authorization (PA) hurdles and strict step therapy requirements stall the script, blocking automated dispensing and demanding clinical override.</p>
+                    </div>
+                    <div class="tile">
+                        <h3>Out-of-Network Errors</h3>
+                        <p>Data mismatches, rigid network barriers, or missing proprietary logic trigger automatic rejections that standard PMS tools cannot resolve.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Phase 3 (Manual Rescue) -->
+        <div class="slide-container image-right-layout" id="slide7">
+            <div class="two-column">
+                <div class="content-container">
+                    <h2 class="slide-title">Phase 3: <span>Manual Rescue</span></h2>
+                    <ul class="bullet-list">
+                        <li><strong>Step E:</strong> The Pharmacist or Tech is forced to step away from the counter and the patient.</li>
+                        <li><strong>Step F:</strong> They must log into 3 to 5 separate, unintegrated web portals.</li>
+                        <li>They manually apply Secondary Insurance, Manufacturer Rebates, and PBM overrides.</li>
+                    </ul>
+                </div>
+                <div class="image-container">
+                    <img src="https://images.unsplash.com/photo-1587854692152-cbe668df9731?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Pharmacist working at a modern computer pharmacy counter">
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: The Time Drain -->
+        <div class="slide-container" id="slide8">
+            <h2 class="slide-title">The Time <span>Drain</span></h2>
+            <div class="content-area">
+                <div class="highlight-numbers-layout">
+                    <div class="number-box">
+                        <div class="number">14 Min</div>
+                    </div>
+                    <div class="text-box">
+                        <h3 style="color: #FBF6FF;">Wasted per transaction.</h3>
+                        <p>Highly paid clinical staff are forced into basic data-entry triage. Across hundreds of daily scripts, 14 minutes per complex claim scales into massive, unrecoverable labor losses.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: The Cash Drain -->
+        <div class="slide-container" id="slide9">
+            <h2 class="slide-title">The Cash <span>Drain</span></h2>
+            <div class="content-area">
+                <div class="highlight-numbers-layout">
+                    <div class="number-box">
+                        <div class="number" style="font-size: 130px;">$25-$57</div>
+                    </div>
+                    <div class="text-box">
+                        <h3 style="color: #FBF6FF;">Lost in administrative rework.</h3>
+                        <p>This is pure margin erased directly from the holding's bottom line. Manual intervention entirely destroys the profitability of the prescription.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Phase 4 Title -->
+        <div class="slide-container" id="slide10">
+            <div class="section-title-layout">
+                <hr>
+                <h2>Phase 4: <span>The Drop-Off</span></h2>
+                <p>Step G: The Co-pay logic is finally calculated.</p>
+            </div>
+        </div>
+
+        <!-- Slide 11: Abandonment Chart -->
+        <div class="slide-container" id="slide11">
+            <h2 class="slide-title">Medication <span>Abandonment</span></h2>
+            <div class="content-area">
+                <div class="doughnut-chart-container">
+                    <div class="doughnut-chart" style="background: conic-gradient(#FF296A 0% 60%, #272A2E 60% 100%);"></div>
+                    <ul class="legend">
+                        <li><div class="color-box" style="background-color: #FF296A;"></div>60% Abandonment</li>
+                        <li><div class="color-box" style="background-color: #272A2E;"></div>40% Retained / Filled</li>
+                    </ul>
+                </div>
+                <p class="chart-summary">If the manual adjudication process took too long at the counter, or if the resulting co-pay calculation remains over $500, patients will simply walk away from the script.</p>
+            </div>
+        </div>
+
+        <!-- Slide 12: Q&A / Close -->
+        <div class="slide-container" id="slide12">
+            <div class="qa-layout">
+                <h2>Stop the <span>Leak.</span></h2>
+                <p style="max-width: 800px; margin: 0 auto;">It's time to build custom, secure middleware that prevents the 11.81% drop-off and bypasses the 14-minute manual rescue entirely.</p>
+                <div class="contact-info">
+                    Loopstudio.dev | Security-First Tech Partner
+                </div>
+            </div>
+        </div>
+
+        <!-- Presentation UI Elements -->
+        <div class="slide-counter"><span id="current-slide-num">1</span> / <span id="total-slides-num">12</span></div>
+        <div class="nav-controls">
+            <button class="nav-btn" id="prev-btn" title="Previous Slide"><i class="fa-solid fa-arrow-left"></i></button>
+            <button class="nav-btn" id="next-btn" title="Next Slide"><i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    </div> <!-- End presentation wrapper -->
+
+    <script>
+        // --- Presentation Engine Logic ---
+        const slides = document.querySelectorAll('.slide-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const counterCurrent = document.getElementById('current-slide-num');
+        const counterTotal = document.getElementById('total-slides-num');
+        let currentSlide = 0;
+
+        // Ensure total slides always reflects the actual DOM elements
+        counterTotal.innerText = slides.length;
+
+        // Function to update visible slide
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            counterCurrent.innerText = currentSlide + 1;
+        }
+
+        // Navigation Functions
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        }
+
+        // Event Listeners for Buttons
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+
+        // Event Listener for Keyboard Arrows
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+                e.preventDefault(); // Prevent page scrolling on Spacebar
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // --- Responsive Scaling Logic ---
+        // Ensures the 1280x720 slide perfectly fits any window size
+        function resizePresentation() {
+            const wrapper = document.getElementById('presentation-wrapper');
+            // Calculate scale ratio, maintaining aspect ratio. 0.98 adds a tiny 2% margin.
+            const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720) * 0.96; 
+            wrapper.style.transform = `scale(${scale})`;
+        }
+
+        // Listen for window resize to adjust dynamically
+        window.addEventListener('resize', resizePresentation);
+        
+        // Initial setup calls
+        resizePresentation(); 
+        updateSlides();
+    </script>
+</body>
+</html>
